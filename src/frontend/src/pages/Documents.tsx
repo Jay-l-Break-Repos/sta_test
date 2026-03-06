@@ -20,6 +20,7 @@ export const Documents = () => {
     const [loading, setLoading] = useState(true);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
+    const [documentNameToDelete, setDocumentNameToDelete] = useState<string>('');
 
     const fetchDocuments = async () => {
         setLoading(true);
@@ -60,8 +61,9 @@ export const Documents = () => {
         return <FileText size={20} className="text-gray-500" />;
     };
 
-    const handleDeleteClick = (id: number) => {
+    const handleDeleteClick = (id: number, name: string) => {
         setDocumentToDelete(id);
+        setDocumentNameToDelete(name);
         setConfirmDialogOpen(true);
     };
 
@@ -82,12 +84,14 @@ export const Documents = () => {
         } finally {
             setConfirmDialogOpen(false);
             setDocumentToDelete(null);
+            setDocumentNameToDelete('');
         }
     };
 
     const handleCancelDelete = () => {
         setConfirmDialogOpen(false);
         setDocumentToDelete(null);
+        setDocumentNameToDelete('');
     };
 
 
@@ -180,7 +184,7 @@ export const Documents = () => {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleDeleteClick(doc.id);
+                                                            handleDeleteClick(doc.id, doc.name);
                                                         }}
                                                         className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
                                                         title="Delete"
@@ -211,7 +215,7 @@ export const Documents = () => {
                                     <div className="p-2 bg-red-50 rounded-xl">
                                         <Trash2 className="text-red-500" size={24} />
                                     </div>
-                                    <h3 className="text-lg font-semibold text-gray-900">Confirm Deletion</h3>
+                                    <h3 className="text-lg font-semibold text-gray-900">Delete Document</h3>
                                 </div>
                                 <button
                                     onClick={handleCancelDelete}
@@ -222,7 +226,7 @@ export const Documents = () => {
                                 </button>
                             </div>
                             
-                            <p className="text-gray-600 mb-6">Are you sure you want to delete this document? This action cannot be undone.</p>
+                            <p className="text-gray-600 mb-6">Are you sure you want to delete the document "{documentNameToDelete}"? This action cannot be undone.</p>
                             
                             <div className="flex gap-3 justify-end">
                                 <button
