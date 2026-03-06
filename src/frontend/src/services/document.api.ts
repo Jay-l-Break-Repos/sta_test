@@ -51,3 +51,7 @@ export const getDocument = async (id: number): Promise<ApiDocument> => {
     const response = await axios.get<ApiDocument>(`/api/documents/${id}`);
     return response.data;
 };
+
+export const deleteDocument = async (id: number): Promise<void> => {
+    await axios.delete(`/api/documents/${id}`);
+};

@@ -97,3 +97,44 @@ async def view_document(
         text_content = f.read()
     
     return Response(content=text_content, media_type="text/plain")
+
+
+@router.delete("/{document_id}", status_code=200)
+async def delete_document(
+    document_id: int,
+    session: Session = Depends(get_session)
+):
+    """
+    Delete a document by ID.
+    
+    Args:
+        document_id: ID of the document to delete
+        session: Database session
+        
+    Returns:
+        Empty response with 200 status code on success
+        
+    Raises:
+        HTTPException: 404 if document not found, 500 for server errors
+    """
+    try:
+        # Get the document from database
+        document = session.get(Document, document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Delete the document from database
+        session.delete(document)
+        session.commit()
+        
+        return {"detail": "Document deleted successfully"}
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions we've created
+        raise
+    except Exception as e:
+        # Log the error for debugging
+        import traceback
+        traceback.print_exc()
+        print(f"ERROR deleting document {document_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
