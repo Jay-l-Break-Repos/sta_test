@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText } from 'lucide-react';
-import { type ApiDocument, getDocument } from '../services/document.api';
+import { ArrowLeft, FileText, Trash2 } from 'lucide-react';
+import { type ApiDocument, getDocument, deleteDocument } from '../services/document.api';
 import axios from 'axios';
-import { showError } from '../utils/toast';
+import { showError, showSuccess } from '../utils/toast';
 
 
 import './DocumentView.css';
@@ -14,7 +14,7 @@ export const DocumentView: React.FC = () => {
     const [document, setDocument] = useState<ApiDocument | null>(null);
     const [textContent, setTextContent] = useState("");
     const [loading, setLoading] = useState(true);
-
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchDocument = async () => {
@@ -55,6 +55,29 @@ export const DocumentView: React.FC = () => {
         };
         fetchContent();
     }, [document]);
+
+    const handleDeleteClick = () => {
+        setConfirmDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!id) return;
+
+        try {
+            await deleteDocument(parseInt(id));
+            showSuccess('Document deleted successfully');
+            navigate('/documents');
+        } catch (error) {
+            console.error('Failed to delete document:', error);
+            showError('Failed to delete document');
+        } finally {
+            setConfirmDialogOpen(false);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setConfirmDialogOpen(false);
+    };
 
     if (loading || !document) {
         return (
@@ -136,7 +159,13 @@ export const DocumentView: React.FC = () => {
 
                         {/* Action Buttons Container */}
                         <div className="document-actions">
-
+                            <button
+                                onClick={handleDeleteClick}
+                                className="action-button delete-button"
+                                title="Delete Document"
+                            >
+                                <Trash2 size={18} />
+                            </button>
                         </div>
                     </div>
 
@@ -146,6 +175,39 @@ export const DocumentView: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Confirmation Dialog */}
+            {confirmDialogOpen && (
+                <div className="confirmation-overlay" onClick={(e) => e.stopPropagation()}>
+                    <div className="confirmation-dialog" onClick={(e) => e.stopPropagation()}>
+                        <div className="confirmation-header">
+                            <div className="confirmation-icon">
+                                <Trash2 className="text-red-500" size={24} />
+                            </div>
+                            <h3 className="confirmation-title">Delete Document</h3>
+                        </div>
+                        
+                        <p className="confirmation-message">
+                            Are you sure you want to delete the document "{document?.name}"? This action cannot be undone.
+                        </p>
+                        
+                        <div className="confirmation-actions">
+                            <button
+                                onClick={handleCancelDelete}
+                                className="btn-cancel"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="btn-delete"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

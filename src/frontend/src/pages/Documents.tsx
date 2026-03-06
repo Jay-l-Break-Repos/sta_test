@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Eye, Plus } from 'lucide-react';
-import { getDocuments } from '../services/document.api';
-import { showError } from '../utils/toast';
+import { FileText, Eye, Plus, Trash2 } from 'lucide-react';
+import { getDocuments, deleteDocument } from '../services/document.api';
+import { showError, showSuccess } from '../utils/toast';
 
 interface Document {
     id: number;
@@ -18,6 +18,9 @@ export const Documents = () => {
     const navigate = useNavigate();
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [documentToDelete, setDocumentToDelete] = useState<number | null>(null);
+    const [documentNameToDelete, setDocumentNameToDelete] = useState<string>('');
 
     const fetchDocuments = async () => {
         setLoading(true);
@@ -56,6 +59,39 @@ export const Documents = () => {
 
         // Default
         return <FileText size={20} className="text-gray-500" />;
+    };
+
+    const handleDeleteClick = (id: number, name: string) => {
+        setDocumentToDelete(id);
+        setDocumentNameToDelete(name);
+        setConfirmDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (documentToDelete === null) return;
+
+        try {
+            await deleteDocument(documentToDelete);
+            
+            // Remove the deleted document from the list
+            setDocuments(documents.filter(doc => doc.id !== documentToDelete));
+            
+            // Show success message
+            showSuccess('Document deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete document:', error);
+            showError('Failed to delete document');
+        } finally {
+            setConfirmDialogOpen(false);
+            setDocumentToDelete(null);
+            setDocumentNameToDelete('');
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setConfirmDialogOpen(false);
+        setDocumentToDelete(null);
+        setDocumentNameToDelete('');
     };
 
 
@@ -134,16 +170,28 @@ export const Documents = () => {
                                             </td>
                                             <td className="py-4 px-4 text-gray-500 text-sm font-mono text-right">{formatSize(doc.size)}</td>
                                             <td className="py-4 px-4 pr-6 text-right">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/documents/${doc.id}`);
-                                                    }}
-                                                    className="p-2 hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 rounded-lg transition-colors"
-                                                    title="View"
-                                                >
-                                                    <Eye size={18} />
-                                                </button>
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/documents/${doc.id}`);
+                                                        }}
+                                                        className="p-2 hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 rounded-lg transition-colors"
+                                                        title="View"
+                                                    >
+                                                        <Eye size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteClick(doc.id, doc.name);
+                                                        }}
+                                                        className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -153,6 +201,51 @@ export const Documents = () => {
                     )}
                 </div>
             </div>
+
+            {/* Confirmation Dialog */}
+            {confirmDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div 
+                        className="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md transform transition-all duration-300 scale-100"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-50 rounded-xl">
+                                        <Trash2 className="text-red-500" size={24} />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-900">Delete Document</h3>
+                                </div>
+                                <button
+                                    onClick={handleCancelDelete}
+                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    aria-label="Close"
+                                >
+                                    <X size={20} className="text-gray-500" />
+                                </button>
+                            </div>
+                            
+                            <p className="text-gray-600 mb-6">Are you sure you want to delete the document "{documentNameToDelete}"? This action cannot be undone.</p>
+                            
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={handleCancelDelete}
+                                    className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleConfirmDelete}
+                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
