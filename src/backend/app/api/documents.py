@@ -127,7 +127,8 @@ async def delete_document(
         session.delete(document)
         session.commit()
         
-        return {"detail": "Document deleted successfully"}
+        # Return empty response with 200 status code
+        return Response(status_code=200)
         
     except HTTPException:
         # Re-raise HTTP exceptions we've created
